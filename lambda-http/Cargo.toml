@@ -17,11 +17,12 @@ categories = ["web-programming::http-server"]
 readme = "README.md"
 
 [features]
-default = ["apigw_rest", "apigw_http", "apigw_websockets", "alb", "tracing"]
+default = ["apigw_rest", "apigw_http", "apigw_websockets", "alb", "vpc_lattice", "tracing"]
 apigw_rest = []
 apigw_http = []
 apigw_websockets = []
 alb = []
+vpc_lattice = []
 pass_through = []
 catch-all-fields = ["aws_lambda_events/catch-all-fields"]
 tracing = ["lambda_runtime/tracing"] # enables access to the Tracing utilities

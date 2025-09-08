@@ -7,6 +7,7 @@ use aws_lambda_events::apigw::ApiGatewayProxyRequest;
 use aws_lambda_events::apigw::ApiGatewayV2httpRequest;
 #[cfg(feature = "apigw_websockets")]
 use aws_lambda_events::apigw::ApiGatewayWebsocketProxyRequest;
+use aws_lambda_events::vpc_lattice::VpcLatticeRequestV2;
 use serde::{de::Error, Deserialize};
 use serde_json::value::RawValue;
 
@@ -38,6 +39,10 @@ impl<'de> Deserialize<'de> for LambdaRequest {
         #[cfg(feature = "apigw_websockets")]
         if let Ok(res) = serde_json::from_str::<ApiGatewayWebsocketProxyRequest>(data) {
             return Ok(LambdaRequest::WebSocket(res));
+        }
+        #[cfg(feature = "vpc_lattice")]
+        if let Ok(res) = serde_json::from_str::<VpcLatticeRequestV2>(data) {
+            return Ok(LambdaRequest::VpcLattice(res));
         }
         #[cfg(feature = "pass_through")]
         if PASS_THROUGH_ENABLED {

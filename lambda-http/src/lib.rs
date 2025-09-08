@@ -2,7 +2,9 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 //#![deny(warnings)]
 //! Enriches the `lambda` crate with [`http`](https://github.com/hyperium/http)
-//! types targeting AWS [ALB](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html), [API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html) REST and HTTP API lambda integrations.
+//! types targeting AWS [ALB](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html),
+//! [API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html),
+//! [VPC Lattice]() REST and HTTP API lambda integrations
 //!
 //! This crate abstracts over all of these trigger events using standard [`http`](https://github.com/hyperium/http) types minimizing the mental overhead
 //! of understanding the nuances and variation between trigger details allowing you to focus more on your application while also giving you to the maximum flexibility to
