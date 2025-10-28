@@ -8,6 +8,8 @@ use aws_lambda_events::apigw::ApiGatewayProxyResponse;
 #[cfg(feature = "apigw_http")]
 use aws_lambda_events::apigw::ApiGatewayV2httpResponse;
 use aws_lambda_events::encodings::Body;
+#[cfg(feature = "vpc_lattice")]
+use aws_lambda_events::vpc_lattice::VpcLatticeResponse;
 use encoding_rs::Encoding;
 use http::{
     header::{CONTENT_ENCODING, CONTENT_TYPE},
@@ -50,6 +52,8 @@ pub enum LambdaResponse {
     ApiGatewayV2(ApiGatewayV2httpResponse),
     #[cfg(feature = "alb")]
     Alb(AlbTargetGroupResponse),
+    #[cfg(feature = "vpc_lattice")]
+    VpcLattice(VpcLatticeResponse),
     #[cfg(feature = "pass_through")]
     PassThrough(serde_json::Value),
 }
@@ -141,6 +145,23 @@ impl LambdaResponse {
                 #[cfg(feature = "catch-all-fields")]
                 other: Default::default(),
             }),
+            #[cfg(feature = "vpc_lattice")]
+            RequestOrigin::VpcLattice => LambdaResponse::VpcLattice(VpcLatticeResponse {
+                body,
+                is_base64_encoded,
+                status_code: status_code as u16,
+                status_description: Some(format!(
+                    "{} {}",
+                    status_code,
+                    parts.status.canonical_reason().unwrap_or_default()
+                )),
+                // Explicitly empty, as API gateway v1 will merge "headers" and
+                // "multi_value_headers" fields together resulting in duplicate response headers.
+                headers: HeaderMap::new(),
+                // Today, this implementation doesn't provide any additional fields
+                #[cfg(feature = "catch-all-fields")]
+                other: Default::default(),
+            }),
             #[cfg(feature = "pass_through")]
             RequestOrigin::PassThrough => {
                 match body {
@@ -154,9 +175,10 @@ impl LambdaResponse {
                 feature = "apigw_rest",
                 feature = "apigw_http",
                 feature = "alb",
-                feature = "apigw_websockets"
+                feature = "apigw_websockets",
+                feature = "vpc_lattice"
             )))]
-            _ => compile_error!("Either feature `apigw_rest`, `apigw_http`, `alb`, or `apigw_websockets` must be enabled for the `lambda-http` crate."),
+            _ => compile_error!("Either feature `apigw_rest`, `apigw_http`, `alb`, `apigw_websockets` or `vpc_lattice` must be enabled for the `lambda-http` crate."),
         }
     }
 }
