@@ -298,18 +298,19 @@ fn into_vpc_lattice_request(vpclat: VpcLatticeRequestV2) -> http::Request<Body> 
     let http_method = vpclat.method;
     let host = vpclat.headers.get(http::header::HOST).and_then(|s| s.to_str().ok());
     let raw_path = vpclat.path.unwrap_or_default();
+    let raw_path_without_qs = &raw_path[0..raw_path.find("?").unwrap_or(raw_path.len())];
 
     let query_string_parameters = decode_query_map(vpclat.query_string_parameters);
     //let multi_value_query_string_parameters = decode_query_map(vpclat.multi_value_query_string_parameters);
 
     let builder = http::Request::builder()
         .uri(build_request_uri(
-            &raw_path,
+            raw_path_without_qs,
             &vpclat.headers,
             host,
             Some((&query_string_parameters, &query_string_parameters)),
         ))
-        .extension(RawHttpPath(raw_path))
+        .extension(RawHttpPath(raw_path_without_qs.to_string()))
         // multi valued query string parameters are always a super
         // set of singly valued query string parameters,
         // when present, multi-valued query string parameters are preferred
