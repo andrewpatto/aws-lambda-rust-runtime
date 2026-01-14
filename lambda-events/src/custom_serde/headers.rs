@@ -34,6 +34,28 @@ where
     map.end()
 }
 
+/// Serialize a HeaderMap with multiple values per header combined as comma-separated strings.
+/// Used by VPC Lattice V1 which expects multi-value headers as "value1, value2".
+#[cfg(feature = "vpc_lattice")]
+pub(crate) fn serialize_comma_separated_headers<S>(headers: &HeaderMap, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut map = serializer.serialize_map(Some(headers.keys_len()))?;
+    for key in headers.keys() {
+        let values: Vec<&str> = headers
+            .get_all(key)
+            .iter()
+            .filter_map(|v| v.to_str().ok())
+            .collect();
+        if !values.is_empty() {
+            let combined_value = values.join(", ");
+            map.serialize_entry(key.as_str(), &combined_value)?;
+        }
+    }
+    map.end()
+}
+
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum OneOrMore<'a> {
@@ -44,6 +66,7 @@ enum OneOrMore<'a> {
 
 struct HeaderMapVisitor {
     is_human_readable: bool,
+    split_comma_separated: bool,
 }
 
 impl<'de> Visitor<'de> for HeaderMapVisitor {
@@ -97,17 +120,25 @@ impl<'de> Visitor<'de> for HeaderMapVisitor {
                     .map_err(|_| de::Error::invalid_value(Unexpected::Str(&key), &self))?;
                 match val {
                     OneOrMore::One(val) => {
-                        let val = val
-                            .parse()
-                            .map_err(|_| de::Error::invalid_value(Unexpected::Str(&val), &self))?;
-                        map.insert(key, val);
-                    }
-                    OneOrMore::Strings(arr) => {
-                        for val in arr {
+                        if self.split_comma_separated && val.contains(',') {
+                            split_and_append_header(&mut map, &key, &val, &self)?;
+                        } else {
                             let val = val
                                 .parse()
                                 .map_err(|_| de::Error::invalid_value(Unexpected::Str(&val), &self))?;
-                            map.append(&key, val);
+                            map.insert(key, val);
+                        }
+                    }
+                    OneOrMore::Strings(arr) => {
+                        for val in arr {
+                            if self.split_comma_separated && val.contains(',') {
+                                split_and_append_header(&mut map, &key, &val, &self)?;
+                            } else {
+                                let val = val
+                                    .parse()
+                                    .map_err(|_| de::Error::invalid_value(Unexpected::Str(&val), &self))?;
+                                map.append(&key, val);
+                            }
                         }
                     }
                     OneOrMore::Bytes(arr) => {
@@ -124,13 +155,51 @@ impl<'de> Visitor<'de> for HeaderMapVisitor {
     }
 }
 
+fn split_and_append_header<E>(
+    map: &mut HeaderMap,
+    key: &HeaderName,
+    value: &str,
+    visitor: &HeaderMapVisitor,
+) -> Result<(), E>
+where
+    E: DeError,
+{
+    for split_val in value.split(',') {
+        let trimmed_val = split_val.trim();
+        if !trimmed_val.is_empty() {
+            let header_val = trimmed_val
+                .parse()
+                .map_err(|_| de::Error::invalid_value(Unexpected::Str(trimmed_val), visitor))?;
+            map.append(key, header_val);
+        }
+    }
+    Ok(())
+}
+
 /// Implementation detail.
 pub(crate) fn deserialize_headers<'de, D>(de: D) -> Result<HeaderMap, D::Error>
 where
     D: Deserializer<'de>,
 {
     let is_human_readable = de.is_human_readable();
-    de.deserialize_option(HeaderMapVisitor { is_human_readable })
+    de.deserialize_option(HeaderMapVisitor {
+        is_human_readable,
+        split_comma_separated: false,
+    })
+}
+
+/// Deserialize headers, splitting comma-separated values into multiple header values.
+/// Used by VPC Lattice V1 which sends multi-value headers as "value1, value2".
+#[cfg(feature = "vpc_lattice")]
+pub(crate) fn deserialize_comma_separated_headers<'de, D>(de: D) -> Result<HeaderMap, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let is_human_readable = de.is_human_readable();
+    de.deserialize_option(HeaderMapVisitor {
+        is_human_readable,
+        split_comma_separated: true,
+    })
 }
 
 #[cfg(test)]
