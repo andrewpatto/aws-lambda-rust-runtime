@@ -5,8 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::custom_serde::{
-    deserialize_comma_separated_headers, deserialize_nullish_boolean, http_method,
-    serialize_comma_separated_headers,
+    deserialize_comma_separated_headers, deserialize_nullish_boolean, http_method, serialize_comma_separated_headers,
 };
 
 /// `VpcLatticeRequestV1` contains data coming from VPC Lattice service (V1 format)
