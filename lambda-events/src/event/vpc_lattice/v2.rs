@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// `VpcLatticeRequestV2` contains data coming from VPC Lattice service (V2 format)
-/// see: https://docs.aws.amazon.com/vpc-lattice/latest/ug/lambda-functions.html#receive-event-from-service
+/// see: <https://docs.aws.amazon.com/vpc-lattice/latest/ug/lambda-functions.html#receive-event-from-service>
 /// for field definitions.
 #[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
