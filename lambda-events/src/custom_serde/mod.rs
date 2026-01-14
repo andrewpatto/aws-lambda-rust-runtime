@@ -16,7 +16,8 @@ pub type CodeBuildNumber = f32;
     feature = "apigw",
     feature = "s3",
     feature = "iot",
-    feature = "lambda_function_urls"
+    feature = "lambda_function_urls",
+    feature = "vpc_lattice"
 ))]
 mod headers;
 #[cfg(any(
@@ -24,14 +25,15 @@ mod headers;
     feature = "apigw",
     feature = "s3",
     feature = "iot",
-    feature = "lambda_function_urls"
+    feature = "lambda_function_urls",
+    feature = "vpc_lattice"
 ))]
 pub(crate) use self::headers::*;
 
 #[cfg(feature = "dynamodb")]
 pub(crate) mod float_unix_epoch;
 
-#[cfg(any(feature = "alb", feature = "apigw"))]
+#[cfg(any(feature = "alb", feature = "apigw", feature = "vpc_lattice"))]
 pub(crate) mod http_method;
 
 #[cfg(feature = "alb")]
@@ -89,6 +91,7 @@ where
     feature = "code_commit",
     feature = "cognito",
     feature = "sns",
+    feature = "vpc_lattice",
     test
 ))]
 pub(crate) fn deserialize_nullish_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>

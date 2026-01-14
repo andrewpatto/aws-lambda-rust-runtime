@@ -7,6 +7,7 @@ use serde_json::Value;
 
 /// `VpcLatticeResponse` configures the response to be returned
 /// by VPC Lattice (both V1 and V2) for the request
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeResponse {
@@ -16,7 +17,8 @@ pub struct VpcLatticeResponse {
     pub is_base64_encoded: bool,
 
     /// The HTTP status code for the request
-    pub status_code: u16,
+    // i64 for consistency with other event types (e.g. AlbTargetGroupResponse, ApiGatewayProxyResponse)
+    pub status_code: i64,
 
     /// The HTTP status description (optional)
     #[serde(default)]
@@ -48,7 +50,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "vpc_lattice")]
-    fn example_alb_lambda_target_response() {
+    fn example_vpc_lattice_response() {
         let data = include_bytes!("../../fixtures/example-vpc-lattice-response.json");
         let parsed: VpcLatticeResponse = serde_json::from_slice(data).unwrap();
         let output: String = serde_json::to_string(&parsed).unwrap();

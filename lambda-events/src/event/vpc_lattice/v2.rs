@@ -10,6 +10,7 @@ use serde_json::Value;
 /// `VpcLatticeRequestV2` contains data coming from VPC Lattice service (V2 format)
 /// see: https://docs.aws.amazon.com/vpc-lattice/latest/ug/lambda-functions.html#receive-event-from-service
 /// for field definitions.
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2 {
@@ -56,6 +57,7 @@ pub struct VpcLatticeRequestV2 {
 }
 
 /// VPC Lattice specific request context
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2Context {
@@ -91,6 +93,7 @@ pub struct VpcLatticeRequestV2Context {
 }
 
 /// Identity information in VPC Lattice request context
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2Identity {

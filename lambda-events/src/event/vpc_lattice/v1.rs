@@ -4,12 +4,13 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "catch-all-fields")]
 use serde_json::Value;
 
-use crate::{
-    custom_serde::{deserialize_nullish_boolean, http_method},
-    vpc_lattice::{deserialize_comma_separated_headers, serialize_comma_separated_headers},
+use crate::custom_serde::{
+    deserialize_comma_separated_headers, deserialize_nullish_boolean, http_method,
+    serialize_comma_separated_headers,
 };
 
 /// `VpcLatticeRequestV1` contains data coming from VPC Lattice service (V1 format)
+#[non_exhaustive]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 // we note that V1 requests are snake cased UNLIKE v2 which are camel cased
 #[serde(rename_all = "snake_case")]
