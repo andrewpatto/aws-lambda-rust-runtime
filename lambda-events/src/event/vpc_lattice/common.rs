@@ -1,5 +1,7 @@
-use crate::custom_serde::{deserialize_headers, serialize_headers};
-use crate::encodings::Body;
+use crate::{
+    custom_serde::{deserialize_headers, serialize_headers},
+    encodings::Body,
+};
 use http::HeaderMap;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "catch-all-fields")]

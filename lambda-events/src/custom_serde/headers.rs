@@ -43,11 +43,7 @@ where
 {
     let mut map = serializer.serialize_map(Some(headers.keys_len()))?;
     for key in headers.keys() {
-        let values: Vec<&str> = headers
-            .get_all(key)
-            .iter()
-            .filter_map(|v| v.to_str().ok())
-            .collect();
+        let values: Vec<&str> = headers.get_all(key).iter().filter_map(|v| v.to_str().ok()).collect();
         if !values.is_empty() {
             let combined_value = values.join(", ");
             map.serialize_entry(key.as_str(), &combined_value)?;
