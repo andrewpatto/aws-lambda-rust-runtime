@@ -1,22 +1,28 @@
+#[cfg(feature = "builders")]
+use bon::Builder;
 use http::{HeaderMap, Method};
 use query_map::QueryMap;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "catch-all-fields")]
 use serde_json::Value;
 
-use crate::custom_serde::{
-    deserialize_comma_separated_headers, deserialize_nullish_boolean, http_method, serialize_comma_separated_headers,
+use crate::{
+    custom_serde::{
+        deserialize_comma_separated_headers, deserialize_nullish_boolean, http_method,
+        serialize_comma_separated_headers,
+    },
+    encodings::Body,
 };
 
 /// `VpcLatticeRequestV1` contains data coming from VPC Lattice service (V1 format)
 #[non_exhaustive]
+#[cfg_attr(feature = "builders", derive(Builder))]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 // we note that V1 requests are snake cased UNLIKE v2 which are camel cased
 #[serde(rename_all = "snake_case")]
 pub struct VpcLatticeRequestV1 {
     /// The url path for the request
-    #[serde(default)]
-    pub raw_path: Option<String>,
+    pub raw_path: String,
 
     /// The HTTP method of the request
     #[serde(with = "http_method")]
@@ -34,7 +40,7 @@ pub struct VpcLatticeRequestV1 {
 
     /// The request body
     #[serde(default)]
-    pub body: Option<String>,
+    pub body: Option<Body>,
 
     /// Whether the body is base64 encoded
     #[serde(default, deserialize_with = "deserialize_nullish_boolean")]
@@ -44,6 +50,7 @@ pub struct VpcLatticeRequestV1 {
     #[cfg(feature = "catch-all-fields")]
     #[cfg_attr(docsrs, doc(cfg(feature = "catch-all-fields")))]
     #[serde(flatten)]
+    #[cfg_attr(feature = "builders", builder(default))]
     pub other: serde_json::Map<String, Value>,
 }
 
@@ -57,14 +64,17 @@ mod test {
         let data = include_bytes!("../../fixtures/example-vpc-lattice-v1-request.json");
         let parsed: VpcLatticeRequestV1 = serde_json::from_slice(data).unwrap();
 
-        assert_eq!("/api/product", parsed.raw_path.unwrap());
+        assert_eq!("/api/product", parsed.raw_path);
         assert_eq!("POST", parsed.method);
         assert_eq!(
             "curl/7.68.0",
             parsed.headers.get_all("user-agent").iter().next().unwrap()
         );
         assert_eq!("electronics", parsed.query_string_parameters.first("category").unwrap());
-        assert_eq!("{\"id\": 5, \"description\": \"TV\"}", parsed.body.unwrap());
+        assert_eq!(
+            Body::Text("{\"id\": 5, \"description\": \"TV\"}".to_string()),
+            parsed.body.unwrap()
+        );
         assert!(!parsed.is_base64_encoded);
     }
 

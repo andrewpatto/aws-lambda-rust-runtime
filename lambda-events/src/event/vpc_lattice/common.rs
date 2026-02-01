@@ -3,6 +3,9 @@ use crate::{
     encodings::Body,
 };
 use http::HeaderMap;
+
+#[cfg(feature = "builders")]
+use bon::Builder;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "catch-all-fields")]
 use serde_json::Value;
@@ -10,6 +13,7 @@ use serde_json::Value;
 /// `VpcLatticeResponse` configures the response to be returned
 /// by VPC Lattice (both V1 and V2) for the request
 #[non_exhaustive]
+#[cfg_attr(feature = "builders", derive(Builder))]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeResponse {
@@ -19,12 +23,7 @@ pub struct VpcLatticeResponse {
     pub is_base64_encoded: bool,
 
     /// The HTTP status code for the request
-    // i64 for consistency with other event types (e.g. AlbTargetGroupResponse, ApiGatewayProxyResponse)
-    pub status_code: i64,
-
-    /// The HTTP status description (optional)
-    #[serde(default)]
-    pub status_description: Option<String>,
+    pub status_code: u16,
 
     /// The Http headers to return
     #[serde(deserialize_with = "deserialize_headers")]
@@ -43,6 +42,7 @@ pub struct VpcLatticeResponse {
     #[cfg(feature = "catch-all-fields")]
     #[cfg_attr(docsrs, doc(cfg(feature = "catch-all-fields")))]
     #[serde(flatten)]
+    #[cfg_attr(feature = "builders", builder(default))]
     pub other: serde_json::Map<String, Value>,
 }
 

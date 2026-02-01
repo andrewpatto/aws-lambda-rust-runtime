@@ -1,6 +1,9 @@
-use crate::custom_serde::{
-    deserialize_headers, deserialize_nullish_boolean, http_method, serialize_multi_value_headers,
+use crate::{
+    custom_serde::{deserialize_headers, deserialize_nullish_boolean, http_method, serialize_multi_value_headers},
+    encodings::Body,
 };
+#[cfg(feature = "builders")]
+use bon::Builder;
 use http::{HeaderMap, Method};
 use query_map::QueryMap;
 use serde::{Deserialize, Serialize};
@@ -11,16 +14,16 @@ use serde_json::Value;
 /// see: <https://docs.aws.amazon.com/vpc-lattice/latest/ug/lambda-functions.html#receive-event-from-service>
 /// for field definitions.
 #[non_exhaustive]
+#[cfg_attr(feature = "builders", derive(Builder))]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2 {
     /// The version of the event structure (always "2.0" for V2)
-    #[serde(default)]
-    pub version: Option<String>,
+    #[serde(default = "default_version")]
+    pub version: String,
 
     /// The url path for the request
-    #[serde(default)]
-    pub path: Option<String>,
+    pub path: String,
 
     /// The HTTP method of the request
     #[serde(with = "http_method")]
@@ -37,14 +40,13 @@ pub struct VpcLatticeRequestV2 {
 
     /// The request body
     #[serde(default)]
-    pub body: Option<String>,
+    pub body: Option<Body>,
 
     /// Whether the body is base64 encoded
     #[serde(default, deserialize_with = "deserialize_nullish_boolean")]
     pub is_base64_encoded: bool,
 
     /// VPC Lattice specific request context
-    #[serde(bound = "")]
     pub request_context: VpcLatticeRequestV2Context,
 
     /// Catchall to catch any additional fields that were present but not explicitly defined by this struct.
@@ -53,47 +55,47 @@ pub struct VpcLatticeRequestV2 {
     #[cfg(feature = "catch-all-fields")]
     #[cfg_attr(docsrs, doc(cfg(feature = "catch-all-fields")))]
     #[serde(flatten)]
+    #[cfg_attr(feature = "builders", builder(default))]
     pub other: serde_json::Map<String, Value>,
 }
 
 /// VPC Lattice specific request context
 #[non_exhaustive]
+#[cfg_attr(feature = "builders", derive(Builder))]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2Context {
     /// ARN of the service network that delivers the request
-    #[serde(default)]
-    pub service_network_arn: Option<String>,
+    pub service_network_arn: String,
 
     /// ARN of the service that receives the request
-    #[serde(default)]
-    pub service_arn: Option<String>,
+    pub service_arn: String,
 
     /// ARN of the target group that receives the request
-    #[serde(default)]
-    pub target_group_arn: Option<String>,
+    pub target_group_arn: String,
 
-    /// Identity information for the request
+    /// Identity information for the request.
+    /// Present only if authentication is configured.
     #[serde(default)]
     pub identity: Option<VpcLatticeRequestV2Identity>,
 
     /// AWS region where the request is processed
-    #[serde(default)]
-    pub region: Option<String>,
+    pub region: String,
 
     /// Time of the request in microseconds since epoch
-    #[serde(default)]
-    pub time_epoch: Option<String>,
+    pub time_epoch: String,
 
     /// Catchall for additional context fields
     #[cfg(feature = "catch-all-fields")]
     #[cfg_attr(docsrs, doc(cfg(feature = "catch-all-fields")))]
     #[serde(flatten)]
+    #[cfg_attr(feature = "builders", builder(default))]
     pub other: serde_json::Map<String, Value>,
 }
 
 /// Identity information in VPC Lattice request context
 #[non_exhaustive]
+#[cfg_attr(feature = "builders", derive(Builder))]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpcLatticeRequestV2Identity {
@@ -140,7 +142,12 @@ pub struct VpcLatticeRequestV2Identity {
     #[cfg(feature = "catch-all-fields")]
     #[cfg_attr(docsrs, doc(cfg(feature = "catch-all-fields")))]
     #[serde(flatten)]
+    #[cfg_attr(feature = "builders", builder(default))]
     pub other: serde_json::Map<String, Value>,
+}
+
+fn default_version() -> String {
+    "2.0".to_string()
 }
 
 #[cfg(test)]
@@ -153,7 +160,7 @@ mod test {
         let data = include_bytes!("../../fixtures/example-vpc-lattice-v2-request.json");
         let parsed: VpcLatticeRequestV2 = serde_json::from_slice(data).unwrap();
 
-        assert_eq!("/health", parsed.path.unwrap());
+        assert_eq!("/health", parsed.path);
         assert_eq!("GET", parsed.method);
         assert_eq!(
             "curl/7.68.0",
@@ -178,18 +185,18 @@ mod test {
         // nested structure testing
         assert_eq!(
             "arn:aws:vpc-lattice:ap-southeast-2:123456789012:service/svc-0a40eebed65f8d69c",
-            parsed.request_context.service_arn.unwrap()
+            parsed.request_context.service_arn
         );
         assert_eq!(
             "arn:aws:vpc-lattice:ap-southeast-2:123456789012:servicenetwork/sn-0bf3f2882e9cc805a",
-            parsed.request_context.service_network_arn.unwrap()
+            parsed.request_context.service_network_arn
         );
         assert_eq!(
             "arn:aws:vpc-lattice:ap-southeast-2:123456789012:targetgroup/tg-6d0ecf831eec9f09",
-            parsed.request_context.target_group_arn.unwrap()
+            parsed.request_context.target_group_arn
         );
-        assert_eq!("ap-southeast-2", parsed.request_context.region.unwrap());
-        assert_eq!("1724875399456789", parsed.request_context.time_epoch.unwrap());
+        assert_eq!("ap-southeast-2", parsed.request_context.region);
+        assert_eq!("1724875399456789", parsed.request_context.time_epoch);
 
         let context = parsed.request_context.identity.as_ref().unwrap();
 
