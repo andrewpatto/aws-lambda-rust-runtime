@@ -10,10 +10,12 @@ on:
 
 jobs:
   run-integration-tests:
+    # Only run on the main repo, not forks
+    if: ${{ github.repository_owner == 'aws' }}
     runs-on: ubuntu-latest
     steps:
         - name: install Cargo Lambda
-          uses: jaxxstorm/action-install-gh-release@v1.9.0
+          uses: jaxxstorm/action-install-gh-release@v2.1.0
           with:
             repo: cargo-lambda/cargo-lambda
             platform: linux
@@ -26,9 +28,9 @@ jobs:
           uses: aws-actions/setup-sam@v2
           with:
             use-installer: true
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v6
         - name: configure aws credentials
-          uses: aws-actions/configure-aws-credentials@v4.0.2
+          uses: aws-actions/configure-aws-credentials@v6.0.0
           with:
             role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
             role-session-name: ${{ secrets.ROLE_SESSION_NAME }}
