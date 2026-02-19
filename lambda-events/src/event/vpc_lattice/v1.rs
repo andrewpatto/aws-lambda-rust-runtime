@@ -21,12 +21,19 @@ use crate::{
 // we note that V1 requests are snake cased UNLIKE v2 which are camel cased
 #[serde(rename_all = "snake_case")]
 pub struct VpcLatticeRequestV1 {
-    /// The url path for the request
-    pub raw_path: String,
+    /// The url path for the request.
+    /// Present only if the protocol is HTTP, HTTPS, or gRPC.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub raw_path: Option<String>,
 
-    /// The HTTP method of the request
-    #[serde(with = "http_method")]
-    pub method: Method,
+    /// The HTTP method of the request.
+    /// Present only if the protocol is HTTP, HTTPS, or gRPC.
+    #[serde(deserialize_with = "http_method::deserialize_optional")]
+    #[serde(serialize_with = "http_method::serialize_optional")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub method: Option<Method>,
 
     /// HTTP headers of the request (V1 uses comma-separated strings for multi-values)
     #[serde(deserialize_with = "deserialize_comma_separated_headers", default)]
@@ -64,8 +71,8 @@ mod test {
         let data = include_bytes!("../../fixtures/example-vpc-lattice-v1-request.json");
         let parsed: VpcLatticeRequestV1 = serde_json::from_slice(data).unwrap();
 
-        assert_eq!("/api/product", parsed.raw_path);
-        assert_eq!("POST", parsed.method);
+        assert_eq!(Some("/api/product".to_string()), parsed.raw_path);
+        assert_eq!(Some(Method::POST), parsed.method);
         assert_eq!(
             "curl/7.68.0",
             parsed.headers.get_all("user-agent").iter().next().unwrap()

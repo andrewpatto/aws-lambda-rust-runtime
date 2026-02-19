@@ -22,12 +22,19 @@ pub struct VpcLatticeRequestV2 {
     #[serde(default = "default_version")]
     pub version: String,
 
-    /// The url path for the request
-    pub path: String,
+    /// The url path for the request.
+    /// Present only if the protocol is HTTP, HTTPS, or gRPC.
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
 
-    /// The HTTP method of the request
-    #[serde(with = "http_method")]
-    pub method: Method,
+    /// The HTTP method of the request.
+    /// Present only if the protocol is HTTP, HTTPS, or gRPC.
+    #[serde(deserialize_with = "http_method::deserialize_optional")]
+    #[serde(serialize_with = "http_method::serialize_optional")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub method: Option<Method>,
 
     /// HTTP headers of the request (VPC Lattice V2 uses arrays for multi-values)
     #[serde(default, deserialize_with = "deserialize_headers")]
@@ -160,8 +167,8 @@ mod test {
         let data = include_bytes!("../../fixtures/example-vpc-lattice-v2-request.json");
         let parsed: VpcLatticeRequestV2 = serde_json::from_slice(data).unwrap();
 
-        assert_eq!("/health", parsed.path);
-        assert_eq!("GET", parsed.method);
+        assert_eq!(Some("/health".to_string()), parsed.path);
+        assert_eq!(Some(Method::GET), parsed.method);
         assert_eq!(
             "curl/7.68.0",
             parsed.headers.get_all("user-agent").iter().next().unwrap()
