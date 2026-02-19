@@ -1,6 +1,5 @@
 {
   "statusCode": 200,
-  "statusDescription": "200 OK",
   "headers": {
     "content-type": "application/json",
     "x-request-id": "req-123456789",
